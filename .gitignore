@@ -1,0 +1,17 @@
+# Credentials — never commit
+.env
+
+# Runtime output
+output/
+downloads/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Claude internal
+.claude/

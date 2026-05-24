@@ -1,0 +1,24 @@
+{
+  "employees": [
+    { "name": "Emad Mahfouz",        "code": 2286, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
+	{ "name": "Yehia Ibrahim",        "code": 1884, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
+    { "name": "Yossef Magdy",        "code": 2198, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
+    { "name": "Ahmed Mahmoud",       "code": 2041, "contract": "Full-time",  "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Ahmed Sultan",        "code": 0,    "contract": "Freelancer", "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Asmaa Khaled",        "code": 2376, "contract": "Full-time",  "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Bassem Hessian",      "code": 0,    "contract": "Freelancer", "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Fayza Abdelsalam",    "code": 2311, "contract": "Full-time",  "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Mohamed Sherif",      "code": 0,    "contract": "Intern",     "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Remon Ibrahim",       "code": 2312, "contract": "Full-time",  "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Salma Wael",          "code": 0,    "contract": "Intern",     "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Taher Ayman",         "code": 2363, "contract": "Full-time",  "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
+    { "name": "Ahmed Mostafa",       "code": 2426, "contract": "Full-time",  "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    },
+    { "name": "Khaled Mohamed",      "code": 2237, "contract": "Full-time",  "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    },
+    { "name": "Mohamed Abdelkereem","code": 2292,  "contract": "Full-time",  "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    },
+    { "name": "Mostafa Helal",       "code": 1602, "contract": "Full-time",  "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    },
+    { "name": "Rwan Osama",          "code": 0,    "contract": "Freelancer", "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    }
+  ],
+  "project_codes": [
+    "4452"
+  ]
+}
