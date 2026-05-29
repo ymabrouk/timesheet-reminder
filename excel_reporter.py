@@ -317,6 +317,7 @@ def save_report(reports: list[EmployeeReport], today: date, output_dir: str) -> 
 
     current_row = _write_title(ws, today)
     current_row = _write_summary(ws, reports, current_row)
+    data_start_row = current_row
     current_row = _write_col_headers(ws, current_row)
 
     # Group by squad
@@ -339,7 +340,7 @@ def save_report(reports: list[EmployeeReport], today: date, output_dir: str) -> 
     current_row = _write_totals(ws, current_row, reports)
 
     _set_col_widths(ws)
-    ws.auto_filter.ref = f"A{current_row - len(reports) - len(squads) - 2}:L{current_row - 1}"
+    ws.auto_filter.ref = f"A{data_start_row}:L{current_row - 1}"
 
     wb.save(output_path)
     return output_path

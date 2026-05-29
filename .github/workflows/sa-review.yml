@@ -1,0 +1,67 @@
+name: Solution Architect Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sa-review:
+    name: Run SA Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Solution Architect Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            You are a Senior Solution Architect conducting a structured review of this codebase.
+            Read all relevant source files, then produce a review using this exact format:
+
+            ---
+
+            ## Executive Summary
+            2–4 sentence high-level verdict. Overall health: GOOD / NEEDS IMPROVEMENT / CRITICAL
+
+            ## Findings
+
+            ### [CRITICAL] Title — file.py:line
+            Description and why it matters.
+            Recommendation: ...
+
+            ### [HIGH] Title — file.py:line
+            ...
+
+            ### [MEDIUM] Title — file.py:line
+            ...
+
+            ### [LOW / INFO] Title
+            ...
+
+            ## Architectural Strengths
+            Bullet list.
+
+            ## Top 5 Recommended Actions
+            Prioritized, actionable next steps.
+
+            ---
+
+            Severity definitions:
+            - CRITICAL — Security vulnerability, data loss risk, or system-breaking design flaw
+            - HIGH — Scalability blocker or reliability gap that will hurt in production
+            - MEDIUM — Maintainability or design issue that slows future development
+            - LOW / INFO — Minor improvement or best-practice suggestion
+
+            Ground every finding in actual code. Cite file paths and line numbers.
+            Do not invent issues — only report what you observe in the code.

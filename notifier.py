@@ -32,7 +32,7 @@ def send_message(token: str, recipient_email: str, markdown: str) -> bool:
         log.info(f"  Webex message sent to {recipient_email}")
         return True
     except requests.HTTPError as e:
-        log.error(f"  Webex HTTP error {resp.status_code}: {resp.text}")
+        log.error(f"  Webex HTTP error: {e}")
         return False
     except requests.RequestException as e:
         log.error(f"  Webex request failed: {e}")

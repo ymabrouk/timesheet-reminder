@@ -13,5 +13,6 @@ __pycache__/
 .venv/
 venv/
 
-# Claude internal
-.claude/
+# Claude internal — keep local settings private, share project hooks
+.claude/settings.local.json
+.claude/__pycache__/

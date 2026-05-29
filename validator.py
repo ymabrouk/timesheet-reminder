@@ -246,7 +246,7 @@ def _v10_contract_cap(total_hrs: float, contract: str,
         cap = freelancer_cap
     elif contract == "Intern":
         cap = intern_cap
-    if cap and total_hrs > cap:
+    if cap is not None and total_hrs > cap:
         return [Violation("V10", "INFO",
                            f"{contract} hours ({total_hrs:.1f}h) exceed monthly cap ({cap}h)")]
     return []
