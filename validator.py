@@ -356,8 +356,8 @@ def validate(df: pd.DataFrame, employees: list[dict],
         violations += _v8_weekend_entries(emp_df)
         violations += _v9_consecutive_gap(emp_df, today, period_start, period_end, max_gap)
         violations += _v10_contract_cap(total_basic + total_incentive, contract, free_cap, intern_cap)
-        violations += _v11_missing_yesterday(emp_df, today, period_start)
-        violations += _v12_behind_daily_pace(emp_df, today, period_start, daily_std)
+        v12 = _v12_behind_daily_pace(emp_df, today, period_start, daily_std)
+        violations += v12 if v12 else _v11_missing_yesterday(emp_df, today, period_start)
 
         reports.append(EmployeeReport(
             name=name,

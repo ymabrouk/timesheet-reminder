@@ -5,10 +5,12 @@ Supports both Azure DevOps cloud (login.microsoftonline.com)
 and on-premise Azure DevOps Server (forms-based login on the server itself).
 """
 
-import os
+import logging
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+
+log = logging.getLogger("timesheet")
 
 
 def _is_login_page(page) -> bool:
@@ -68,25 +70,37 @@ def _login_onprem(page, username: str, password: str):
     ]
 
     # Fill username
+    filled_user = False
     for sel in username_selectors:
         el = page.query_selector(sel)
         if el:
             el.fill(username)
+            filled_user = True
             break
+    if not filled_user:
+        log.warning("Could not find username field on login page — form may not submit correctly")
 
     # Fill password
+    filled_pass = False
     for sel in password_selectors:
         el = page.query_selector(sel)
         if el:
             el.fill(password)
+            filled_pass = True
             break
+    if not filled_pass:
+        log.warning("Could not find password field on login page — form may not submit correctly")
 
     # Submit
+    submitted = False
     for sel in submit_selectors:
         el = page.query_selector(sel)
         if el:
             el.click()
+            submitted = True
             break
+    if not submitted:
+        log.warning("Could not find submit button on login page — authentication may have failed")
 
 
 def _do_login(page, username: str, password: str):
@@ -95,10 +109,10 @@ def _do_login(page, username: str, password: str):
     cloud_domains = ["login.microsoftonline.com", "login.live.com", "login.windows.net"]
 
     if any(d in url for d in cloud_domains):
-        print("  Detected: Microsoft cloud login")
+        log.info("Detected: Microsoft cloud login")
         _login_cloud(page, username, password)
     else:
-        print("  Detected: On-premise / forms-based login")
+        log.info("Detected: On-premise / forms-based login")
         _login_onprem(page, username, password)
 
 
@@ -110,11 +124,11 @@ def _export_query_to_csv(page, query_url: str, download_dir: Path, index: int) -
     # Normalise URL: query-edit -> query (view mode shows results + export button)
     view_url = query_url.replace("/_queries/query-edit/", "/_queries/query/")
 
-    print(f"  Navigating to query {index + 1}: {view_url}")
+    log.info(f"Navigating to query {index + 1}: {view_url}")
     try:
         page.goto(view_url, wait_until="networkidle", timeout=60000)
     except PlaywrightTimeoutError:
-        print(f"  [warn] Page load timed out for query {index + 1}, trying to continue...")
+        log.warning(f"Page load timed out for query {index + 1}, trying to continue...")
 
     # Wait for query results grid
     try:
@@ -123,7 +137,7 @@ def _export_query_to_csv(page, query_url: str, download_dir: Path, index: int) -
             timeout=20000,
         )
     except PlaywrightTimeoutError:
-        print(f"  [warn] Query results grid not detected for query {index + 1}")
+        log.warning(f"Query results grid not detected for query {index + 1}")
 
     # Trigger CSV export
     try:
@@ -137,7 +151,7 @@ def _export_query_to_csv(page, query_url: str, download_dir: Path, index: int) -
             )
             if more_btn:
                 more_btn.click()
-                time.sleep(0.5)
+                page.wait_for_selector("[role='menu']", timeout=5000)
                 export_item = page.query_selector(
                     "li[data-value='exportToCsv'], "
                     "button:has-text('Export to CSV'), "
@@ -159,11 +173,11 @@ def _export_query_to_csv(page, query_url: str, download_dir: Path, index: int) -
         download = download_info.value
         dest = download_dir / f"query_{index + 1:02d}_{download.suggested_filename}"
         download.save_as(str(dest))
-        print(f"  Downloaded: {dest.name}")
+        log.info(f"Downloaded: {dest.name}")
         return dest
 
     except Exception as e:
-        print(f"  [error] Could not trigger export for query {index + 1}: {e}")
+        log.error(f"Could not trigger export for query {index + 1}: {e}")
         return None
 
 
@@ -192,13 +206,13 @@ def download_all_csvs(
         page = context.new_page()
 
         # Navigate to first query URL to trigger auth
-        print("Connecting to Azure DevOps...")
+        log.info("Connecting to Azure DevOps...")
         first_url = query_links[0].replace("/_queries/query-edit/", "/_queries/query/")
         page.goto(first_url, wait_until="networkidle", timeout=60000)
 
         # Login if a login page is detected
         if _is_login_page(page):
-            print("Login page detected — authenticating...")
+            log.info("Login page detected — authenticating...")
             _do_login(page, username, password)
 
             # Wait for redirect back to ADO
@@ -206,15 +220,15 @@ def download_all_csvs(
                 page.wait_for_load_state("networkidle", timeout=30000)
                 # Check if still on login page (wrong credentials)
                 if _is_login_page(page):
-                    print("[error] Still on login page after submitting — check credentials in .env")
+                    log.error("Still on login page after submitting — check credentials in .env")
                     browser.close()
                     return []
             except PlaywrightTimeoutError:
-                print("[warn] Timeout waiting after login — continuing anyway...")
+                log.warning("Timeout waiting after login — continuing anyway...")
 
-            print("Login successful.")
+            log.info("Login successful.")
         else:
-            print("No login page detected — already authenticated or Windows SSO active.")
+            log.info("No login page detected — already authenticated or Windows SSO active.")
 
         # Export each query
         for i, url in enumerate(query_links):
@@ -224,5 +238,5 @@ def download_all_csvs(
 
         browser.close()
 
-    print(f"\nDownloaded {len(downloaded)}/{len(query_links)} CSV files.")
+    log.info(f"Downloaded {len(downloaded)}/{len(query_links)} CSV files.")
     return downloaded
