@@ -1,7 +1,7 @@
 {
   "employees": [
     { "name": "Emad Mahfouz",        "code": 2286, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
-	{ "name": "Yehia Ibrahim",        "code": 1884, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
+    { "name": "Yehia Ibrahim",       "code": 1884, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
     { "name": "Yossef Magdy",        "code": 2198, "contract": "Full-time",  "squad_lead": "Yehia Ibrahim", "squad_name": "Fighters" },
     { "name": "Ahmed Mahmoud",       "code": 2041, "contract": "Full-time",  "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
     { "name": "Ahmed Sultan",        "code": 0,    "contract": "Freelancer", "squad_lead": "Remon Ibrahim", "squad_name": "Hero"     },
@@ -18,7 +18,18 @@
     { "name": "Mostafa Helal",       "code": 1602, "contract": "Full-time",  "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    },
     { "name": "Rwan Osama",          "code": 0,    "contract": "Freelancer", "squad_lead": "Mostafa Helal", "squad_name": "Ninga"    }
   ],
-  "project_codes": [
-    "4452"
-  ]
+  "project_codes": ["4452"],
+  "validation": {
+    "basic_effort_min_hrs": 8,
+    "daily_standard_hrs": 8,
+    "daily_max_hrs": 16,
+    "late_logging_cutoff_day": 25,
+    "max_consecutive_gap_days": 2,
+    "freelancer_monthly_cap_hrs": 160,
+    "intern_monthly_cap_hrs": 120
+  },
+  "notification": {
+    "recipient_email": "yasser.mabrouk@intercom.com.eg",
+    "recipient_name": "Yasser Mabrouk"
+  }
 }
