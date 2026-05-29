@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+  <span class="text-muted small">Today: {{ today }}</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Stat cards ────────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe;">
+        <i class="bi bi-people" style="color:#2563eb;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ employee_count }}</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7;">
+        <i class="bi bi-clock-history" style="color:#16a34a;"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:1.1rem;padding-top:4px;">{{ last_run }}</div>
+        <div class="stat-label">Last Run</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#ffedd5;">
+        <i class="bi bi-file-earmark-excel" style="color:#ea580c;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ report_count }}</div>
+        <div class="stat-label">Reports</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#f1f5f9;">
+        <i class="bi bi-journal-text" style="color:#475569;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ log_count }}</div>
+        <div class="stat-label">Log Files</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Run panel + Recent files ──────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Run Now -->
+  <div class="col-lg-5">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <span><i class="bi bi-play-circle me-1"></i> Run Now</span>
+      </div>
+      <div class="panel-body">
+        <p class="text-muted small mb-3">
+          Trigger the timesheet check manually. The process will download data from Azure
+          DevOps, validate all employees, and send a Webex notification.
+        </p>
+
+        <div class="mb-3">
+          <label for="runDate" class="form-label small fw-semibold">Report Date</label>
+          <input type="date" class="form-control form-control-sm" id="runDate" value="{{ today }}">
+        </div>
+
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="runYesterday">
+          <label class="form-check-label small" for="runYesterday">
+            Use yesterday's date instead
+          </label>
+        </div>
+
+        <button class="btn btn-accent btn-sm px-4" id="runBtn" onclick="triggerRun()">
+          <span id="runBtnLabel"><i class="bi bi-play-fill me-1"></i>Run Now</span>
+          <span id="runBtnSpinner" class="d-none">
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>Running…
+          </span>
+        </button>
+
+        <div id="run-result-banner" class="mt-3 d-none alert py-2 small"></div>
+        <pre id="run-output" class="mt-3"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="col-lg-7">
+    <div class="row g-3 h-100">
+
+      <!-- Recent Reports -->
+      <div class="col-12">
+        <div class="panel">
+          <div class="panel-header">
+            <span><i class="bi bi-file-earmark-excel me-1"></i> Recent Reports</span>
+            <a href="{{ url_for('reports') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;">
+              View all <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+          {% if recent_reports %}
+          <div class="table-responsive">
+            <table class="table table-clean mb-0">
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Date</th>
+                  <th>Size</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in recent_reports %}
+                <tr>
+                  <td class="text-truncate" style="max-width:200px;" title="{{ r.filename }}">
+                    <i class="bi bi-file-earmark-excel text-success me-1"></i>{{ r.filename }}
+                  </td>
+                  <td>{{ r.date }}</td>
+                  <td class="text-muted">{{ r.size }}</td>
+                  <td class="text-end">
+                    <a href="{{ url_for('report_download', filename=r.filename) }}"
+                       class="btn btn-sm btn-outline-success" style="font-size:.75rem;">
+                      <i class="bi bi-download"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="panel-body text-center text-muted small py-4">
+            <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+            No reports yet. Run the tool to generate one.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Recent Logs -->
+      <div class="col-12">
+        <div class="panel">
+          <div class="panel-header">
+            <span><i class="bi bi-journal-text me-1"></i> Recent Logs</span>
+            <a href="{{ url_for('logs') }}" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;">
+              View all <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+          {% if recent_logs %}
+          <div class="table-responsive">
+            <table class="table table-clean mb-0">
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Date</th>
+                  <th>Size</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for l in recent_logs %}
+                <tr>
+                  <td class="text-truncate" style="max-width:200px;" title="{{ l.filename }}">
+                    <i class="bi bi-journal-text text-secondary me-1"></i>{{ l.filename }}
+                  </td>
+                  <td>{{ l.date }}</td>
+                  <td class="text-muted">{{ l.size }}</td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;"
+                            onclick="viewLog('{{ l.filename }}')">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="panel-body text-center text-muted small py-4">
+            <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+            No logs yet.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Log viewer modal ──────────────────────────────────────────────────────── -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-label="Log viewer">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="logModalTitle">Log</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-2">
+        <pre class="log-viewer" id="logModalContent">Loading…</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function triggerRun() {
+  const btn     = document.getElementById('runBtn');
+  const label   = document.getElementById('runBtnLabel');
+  const spinner = document.getElementById('runBtnSpinner');
+  const output  = document.getElementById('run-output');
+  const banner  = document.getElementById('run-result-banner');
+
+  const date      = document.getElementById('runDate').value;
+  const yesterday = document.getElementById('runYesterday').checked;
+
+  btn.disabled = true;
+  label.classList.add('d-none');
+  spinner.classList.remove('d-none');
+  banner.classList.add('d-none');
+  output.style.display = 'none';
+  output.textContent = '';
+
+  const body = new URLSearchParams();
+  body.set('date', date);
+  if (yesterday) body.set('yesterday', 'on');
+
+  fetch('/run', { method: 'POST', body })
+    .then(r => r.json())
+    .then(data => {
+      output.textContent   = data.output || '(no output)';
+      output.style.display = 'block';
+
+      banner.textContent = data.success
+        ? 'Run completed successfully.'
+        : 'Run failed. See output below for details.';
+      banner.className = 'mt-3 alert py-2 small ' +
+        (data.success ? 'alert-success' : 'alert-danger');
+      banner.classList.remove('d-none');
+    })
+    .catch(err => {
+      output.textContent   = 'Request error: ' + err;
+      output.style.display = 'block';
+      banner.textContent   = 'Could not reach the server.';
+      banner.className     = 'mt-3 alert alert-danger py-2 small';
+      banner.classList.remove('d-none');
+    })
+    .finally(() => {
+      btn.disabled = false;
+      label.classList.remove('d-none');
+      spinner.classList.add('d-none');
+    });
+}
+
+function viewLog(filename) {
+  const modal   = new bootstrap.Modal(document.getElementById('logModal'));
+  const pre     = document.getElementById('logModalContent');
+  const title   = document.getElementById('logModalTitle');
+  title.textContent = filename;
+  pre.innerHTML = 'Loading…';
+  modal.show();
+
+  fetch('/logs/' + encodeURIComponent(filename))
+    .then(r => r.json())
+    .then(data => {
+      pre.innerHTML = colorizeLog(data.content || '');
+    })
+    .catch(() => { pre.textContent = 'Failed to load log.'; });
+}
+
+function colorizeLog(text) {
+  return text.split('\n').map(line => {
+    const escaped = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    if (/ERROR/i.test(line))   return `<span class="log-error">${escaped}</span>`;
+    if (/WARNING/i.test(line)) return `<span class="log-warning">${escaped}</span>`;
+    return `<span class="log-info">${escaped}</span>`;
+  }).join('\n');
+}
+</script>
+{% endblock %}

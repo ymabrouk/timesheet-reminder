@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Employees{% endblock %}
+{% block page_title %}Employees{% endblock %}
+
+{% block topbar_actions %}
+  <button class="btn btn-accent btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i> Add Employee
+  </button>
+{% endblock %}
+
+{% block content %}
+
+<div class="panel">
+  <div class="panel-header">
+    <span><i class="bi bi-people me-1"></i> Employee Roster
+      <span class="badge rounded-pill ms-2"
+            style="background:#e8eaf0;color:#1a2744;font-weight:600;font-size:.75rem;">
+        {{ employees|length }}
+      </span>
+    </span>
+  </div>
+
+  {% if employees %}
+  <div class="table-responsive">
+    <table class="table table-clean mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Code</th>
+          <th>Contract</th>
+          <th>Squad Lead</th>
+          <th>Squad</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td class="fw-semibold">{{ emp.name }}</td>
+          <td class="font-monospace text-muted">{{ emp.code if emp.code else '—' }}</td>
+          <td>
+            {% if emp.contract == 'Full-time' %}
+              <span class="badge badge-fulltime">Full-time</span>
+            {% elif emp.contract == 'Freelancer' %}
+              <span class="badge badge-freelancer">Freelancer</span>
+            {% elif emp.contract == 'Intern' %}
+              <span class="badge badge-intern">Intern</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ emp.contract }}</span>
+            {% endif %}
+          </td>
+          <td>{{ emp.squad_lead }}</td>
+          <td>
+            {% set squad_lower = emp.squad_name | lower %}
+            {% if squad_lower == 'fighters' %}
+              <span class="badge" style="background:#DDEBF7;color:#1d4ed8;">{{ emp.squad_name }}</span>
+            {% elif squad_lower == 'hero' %}
+              <span class="badge" style="background:#E2EFDA;color:#166534;">{{ emp.squad_name }}</span>
+            {% elif squad_lower == 'ninga' %}
+              <span class="badge" style="background:#FFF2CC;color:#854d0e;">{{ emp.squad_name }}</span>
+            {% else %}
+              <span class="badge bg-light text-dark border">{{ emp.squad_name }}</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary me-1" style="font-size:.75rem;"
+                    onclick="openEdit({{ loop.index0 }}, {{ emp | tojson }})">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-outline-danger" style="font-size:.75rem;"
+                    onclick="openDelete({{ loop.index0 }}, '{{ emp.name | e }}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="panel-body text-center text-muted py-5">
+    <i class="bi bi-people fs-1 d-block mb-2 opacity-25"></i>
+    No employees configured. Add one to get started.
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Add Employee modal ────────────────────────────────────────────────────── -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-label="Add employee">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('employees_add') }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add Employee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {{ _emp_form_fields(squad_names) }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-accent btn-sm px-4">
+            <i class="bi bi-plus-lg me-1"></i>Add
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Employee modal ───────────────────────────────────────────────────── -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-label="Edit employee">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="editForm" method="POST" action="">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Employee</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="editModalBody">
+          <!-- Filled by JS -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-accent btn-sm px-4">
+            <i class="bi bi-check-lg me-1"></i>Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete confirmation modal ────────────────────────────────────────────── -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-label="Confirm delete">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <form id="deleteForm" method="POST" action="">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title text-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>Delete Employee
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-2">
+          <p class="mb-0 small">Are you sure you want to remove
+            <strong id="deleteEmpName"></strong>? This cannot be undone.</p>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-sm px-3">
+            <i class="bi bi-trash me-1"></i>Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{# ── Macro: shared form fields ──────────────────────────────────────────────── #}
+{% macro _emp_form_fields(squad_names, emp=None) %}
+<div class="mb-3">
+  <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+  <input type="text" class="form-control form-control-sm" name="name"
+         value="{{ emp.name if emp else '' }}" required placeholder="e.g. Ahmed Mahmoud">
+</div>
+<div class="mb-3">
+  <label class="form-label small fw-semibold">Employee Code</label>
+  <input type="number" class="form-control form-control-sm" name="code" min="0"
+         value="{{ emp.code if emp else 0 }}" placeholder="0">
+  <div class="form-text">Enter 0 for Freelancers / Interns without a code.</div>
+</div>
+<div class="mb-3">
+  <label class="form-label small fw-semibold">Contract Type <span class="text-danger">*</span></label>
+  <select class="form-select form-select-sm" name="contract" required>
+    {% for ct in ['Full-time', 'Freelancer', 'Intern'] %}
+    <option value="{{ ct }}" {% if emp and emp.contract == ct %}selected{% endif %}>{{ ct }}</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="mb-3">
+  <label class="form-label small fw-semibold">Squad Lead</label>
+  <input type="text" class="form-control form-control-sm" name="squad_lead"
+         value="{{ emp.squad_lead if emp else '' }}" placeholder="e.g. Yehia Ibrahim">
+</div>
+<div class="mb-0">
+  <label class="form-label small fw-semibold">Squad Name</label>
+  <select class="form-select form-select-sm" name="squad_name" id="squadSelect_{{ 'edit' if emp else 'add' }}">
+    {% for sq in squad_names %}
+    <option value="{{ sq }}" {% if emp and emp.squad_name == sq %}selected{% endif %}>{{ sq }}</option>
+    {% endfor %}
+    <option value="__other__">Other (type below)…</option>
+  </select>
+  <input type="text" class="form-control form-control-sm mt-2 d-none"
+         id="squadOther_{{ 'edit' if emp else 'add' }}"
+         name="squad_name_other" placeholder="Enter squad name">
+</div>
+{% endmacro %}
+
+{% block scripts %}
+<script>
+  const squadNames = {{ squad_names | tojson }};
+
+  /* ── Squad "Other" toggle ──────────────────────────────────────────── */
+  function wireSquadSelect(prefix) {
+    const sel   = document.getElementById('squadSelect_' + prefix);
+    const other = document.getElementById('squadOther_' + prefix);
+    if (!sel) return;
+    sel.addEventListener('change', () => {
+      if (sel.value === '__other__') {
+        other.classList.remove('d-none');
+        other.required = true;
+        sel.name = '_squad_ignored';
+        other.name = 'squad_name';
+      } else {
+        other.classList.add('d-none');
+        other.required = false;
+        sel.name = 'squad_name';
+        other.name = 'squad_name_other';
+      }
+    });
+  }
+  wireSquadSelect('add');
+
+  /* ── Edit modal ────────────────────────────────────────────────────── */
+  function openEdit(idx, emp) {
+    document.getElementById('editForm').action = '/employees/edit/' + idx;
+
+    const contractOptions = ['Full-time', 'Freelancer', 'Intern'].map(ct =>
+      `<option value="${ct}" ${emp.contract === ct ? 'selected' : ''}>${ct}</option>`
+    ).join('');
+
+    const squadOptions = squadNames.map(sq =>
+      `<option value="${sq}" ${emp.squad_name === sq ? 'selected' : ''}>${sq}</option>`
+    ).join('');
+
+    document.getElementById('editModalBody').innerHTML = `
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-sm" name="name"
+               value="${escHtml(emp.name)}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Employee Code</label>
+        <input type="number" class="form-control form-control-sm" name="code"
+               min="0" value="${emp.code || 0}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Contract Type <span class="text-danger">*</span></label>
+        <select class="form-select form-select-sm" name="contract" required>${contractOptions}</select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Squad Lead</label>
+        <input type="text" class="form-control form-control-sm" name="squad_lead"
+               value="${escHtml(emp.squad_lead)}">
+      </div>
+      <div class="mb-0">
+        <label class="form-label small fw-semibold">Squad Name</label>
+        <select class="form-select form-select-sm" name="squad_name" id="squadSelect_edit">
+          ${squadOptions}
+          <option value="__other__">Other (type below)…</option>
+        </select>
+        <input type="text" class="form-control form-control-sm mt-2 d-none"
+               id="squadOther_edit" name="squad_name_other" placeholder="Enter squad name">
+      </div>
+    `;
+    wireSquadSelect('edit');
+
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+  }
+
+  /* ── Delete modal ──────────────────────────────────────────────────── */
+  function openDelete(idx, name) {
+    document.getElementById('deleteForm').action = '/employees/delete/' + idx;
+    document.getElementById('deleteEmpName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+{% endblock %}
