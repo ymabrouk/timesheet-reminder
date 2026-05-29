@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+
+{% if saved %}
+<!-- Success toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+  <div id="savedToast" class="toast align-items-center text-bg-success border-0 show"
+       role="alert" data-bs-delay="3500" data-bs-autohide="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="bi bi-check-circle me-2"></i>Settings saved successfully.
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('settings') }}">
+  <div class="row g-3 mb-4">
+
+    <!-- ── Validation Thresholds ────────────────────────────────────────── -->
+    <div class="col-lg-6">
+      <div class="panel h-100">
+        <div class="panel-header">
+          <span><i class="bi bi-sliders me-1"></i> Validation Thresholds</span>
+        </div>
+        <div class="panel-body">
+
+          {% set v = validation %}
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Basic Effort Min Hours</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.5" min="0" class="form-control" name="basic_effort_min_hrs"
+                     value="{{ v.get('basic_effort_min_hrs', 8) }}">
+              <span class="input-group-text">hrs</span>
+            </div>
+            <div class="form-text">Minimum basic hours for full-time employees (V7).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Daily Standard Hours</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.5" min="1" class="form-control" name="daily_standard_hrs"
+                     value="{{ v.get('daily_standard_hrs', 8) }}">
+              <span class="input-group-text">hrs</span>
+            </div>
+            <div class="form-text">Expected daily effort — used for pace checking (V5, V12).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Daily Maximum Hours</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.5" min="1" class="form-control" name="daily_max_hrs"
+                     value="{{ v.get('daily_max_hrs', 16) }}">
+              <span class="input-group-text">hrs</span>
+            </div>
+            <div class="form-text">Above this threshold a day is flagged as physically impossible (V4).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Late Logging Cutoff Day</label>
+            <div class="input-group input-group-sm">
+              <input type="number" min="1" max="31" class="form-control" name="late_logging_cutoff_day"
+                     value="{{ v.get('late_logging_cutoff_day', 25) }}">
+              <span class="input-group-text">day of month</span>
+            </div>
+            <div class="form-text">Tasks closed after this day in the billing period are flagged (V2).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Max Consecutive Gap Days</label>
+            <div class="input-group input-group-sm">
+              <input type="number" min="1" class="form-control" name="max_consecutive_gap_days"
+                     value="{{ v.get('max_consecutive_gap_days', 2) }}">
+              <span class="input-group-text">days</span>
+            </div>
+            <div class="form-text">Consecutive working days with no effort before a warning (V9).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Freelancer Monthly Cap</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="1" min="0" class="form-control" name="freelancer_monthly_cap_hrs"
+                     value="{{ v.get('freelancer_monthly_cap_hrs', 160) }}">
+              <span class="input-group-text">hrs</span>
+            </div>
+            <div class="form-text">Exceeding this generates an info notice for Freelancers (V10).</div>
+          </div>
+
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Intern Monthly Cap</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="1" min="0" class="form-control" name="intern_monthly_cap_hrs"
+                     value="{{ v.get('intern_monthly_cap_hrs', 120) }}">
+              <span class="input-group-text">hrs</span>
+            </div>
+            <div class="form-text">Exceeding this generates an info notice for Interns (V10).</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Notification ─────────────────────────────────────────────────── -->
+    <div class="col-lg-6">
+      <div class="panel">
+        <div class="panel-header">
+          <span><i class="bi bi-bell me-1"></i> Notification</span>
+        </div>
+        <div class="panel-body">
+
+          {% set n = notification %}
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Recipient Email</label>
+            <input type="email" class="form-control form-control-sm" name="recipient_email"
+                   value="{{ n.get('recipient_email', '') }}"
+                   placeholder="recipient@company.com">
+            <div class="form-text">Webex notification will be sent to this address.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Recipient Name</label>
+            <input type="text" class="form-control form-control-sm" name="recipient_name"
+                   value="{{ n.get('recipient_name', '') }}"
+                   placeholder="Full Name">
+            <div class="form-text">Used as a greeting in the notification message.</div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="alert alert-info py-2 small mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            The Webex token (<code>WEBEX_TOKEN</code>) and Azure DevOps credentials are
+            configured via the <code>.env</code> file in the project root — not stored here.
+          </div>
+        </div>
+      </div>
+
+      <!-- Validation rules reference card -->
+      <div class="panel mt-3">
+        <div class="panel-header">
+          <span><i class="bi bi-book me-1"></i> Validation Rules Reference</span>
+        </div>
+        <div class="panel-body p-0">
+          <table class="table table-clean mb-0" style="font-size:.78rem;">
+            <thead>
+              <tr><th>Code</th><th>Severity</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="font-monospace">V1</td><td><span class="badge bg-danger">ERROR</span></td><td>Missing daily entry</td></tr>
+              <tr><td class="font-monospace">V2</td><td><span class="badge bg-danger">ERROR</span></td><td>Late logging (after period end)</td></tr>
+              <tr><td class="font-monospace">V3</td><td><span class="badge bg-danger">ERROR</span></td><td>Future-dated entries</td></tr>
+              <tr><td class="font-monospace">V4</td><td><span class="badge bg-danger">ERROR</span></td><td>Excessive daily effort</td></tr>
+              <tr><td class="font-monospace">V5</td><td><span class="badge bg-warning text-dark">WARN</span></td><td>Overtime without incentive flag</td></tr>
+              <tr><td class="font-monospace">V6</td><td><span class="badge bg-warning text-dark">WARN</span></td><td>Zero monthly effort</td></tr>
+              <tr><td class="font-monospace">V7</td><td><span class="badge bg-warning text-dark">WARN</span></td><td>Below minimum basic effort</td></tr>
+              <tr><td class="font-monospace">V8</td><td><span class="badge bg-warning text-dark">WARN</span></td><td>Weekend entries</td></tr>
+              <tr><td class="font-monospace">V9</td><td><span class="badge bg-warning text-dark">WARN</span></td><td>Consecutive gap days</td></tr>
+              <tr><td class="font-monospace">V10</td><td><span class="badge bg-info text-dark">INFO</span></td><td>Contract monthly cap exceeded</td></tr>
+              <tr><td class="font-monospace">V11</td><td><span class="badge bg-danger">ERROR</span></td><td>No entry for yesterday</td></tr>
+              <tr><td class="font-monospace">V12</td><td><span class="badge bg-danger">ERROR</span></td><td>Behind daily pace + yesterday missing</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Save button -->
+  <div class="d-flex justify-content-end">
+    <button type="submit" class="btn btn-accent px-5">
+      <i class="bi bi-floppy me-1"></i> Save Settings
+    </button>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Auto-initialise the toast when the page loads (Bootstrap 5 needs explicit init for non-button dismisses)
+  document.addEventListener('DOMContentLoaded', () => {
+    const toastEl = document.getElementById('savedToast');
+    if (toastEl) {
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    }
+  });
+</script>
+{% endblock %}

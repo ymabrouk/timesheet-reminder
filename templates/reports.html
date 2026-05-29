@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+{% block page_title %}Excel Reports{% endblock %}
+
+{% block content %}
+
+<div class="panel">
+  <div class="panel-header">
+    <span>
+      <i class="bi bi-file-earmark-excel me-1"></i> Generated Reports
+      <span class="badge rounded-pill ms-2"
+            style="background:#e8eaf0;color:#1a2744;font-weight:600;font-size:.75rem;">
+        {{ reports|length }}
+      </span>
+    </span>
+    <span class="text-muted small">Stored in <code>output/</code> &mdash; newest first</span>
+  </div>
+
+  {% if reports %}
+  <div class="table-responsive">
+    <table class="table table-clean mb-0">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Report Date</th>
+          <th>Size</th>
+          <th class="text-end">Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td>
+            <i class="bi bi-file-earmark-excel text-success me-2"></i>
+            <span class="font-monospace" style="font-size:.8rem;">{{ r.filename }}</span>
+          </td>
+          <td>{{ r.date }}</td>
+          <td class="text-muted">{{ r.size }}</td>
+          <td class="text-end">
+            <a href="{{ url_for('report_download', filename=r.filename) }}"
+               class="btn btn-sm btn-outline-success" style="font-size:.75rem;"
+               title="Download {{ r.filename }}">
+              <i class="bi bi-download me-1"></i>Download
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="panel-body text-center text-muted py-5">
+    <i class="bi bi-file-earmark-excel fs-1 d-block mb-2 opacity-25"></i>
+    No reports generated yet.
+    <div class="mt-2 small">
+      Go to <a href="{{ url_for('dashboard') }}">Dashboard</a> and click <strong>Run Now</strong>
+      to generate your first report.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if reports %}
+<div class="mt-3 small text-muted">
+  <i class="bi bi-info-circle me-1"></i>
+  Each run creates a new timestamped file. Previous files are never overwritten.
+  Files are in <strong>.xlsx</strong> format and can be opened with Microsoft Excel or compatible applications.
+</div>
+{% endif %}
+
+{% endblock %}

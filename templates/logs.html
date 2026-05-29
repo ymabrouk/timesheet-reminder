@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Logs{% endblock %}
+{% block page_title %}Log Files{% endblock %}
+
+{% block content %}
+
+<div class="panel">
+  <div class="panel-header">
+    <span><i class="bi bi-journal-text me-1"></i> Run Logs
+      <span class="badge rounded-pill ms-2"
+            style="background:#e8eaf0;color:#1a2744;font-weight:600;font-size:.75rem;">
+        {{ logs|length }}
+      </span>
+    </span>
+    <span class="text-muted small">Newest first &mdash; stored in <code>logs/</code></span>
+  </div>
+
+  {% if logs %}
+  <div class="table-responsive">
+    <table class="table table-clean mb-0">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Date</th>
+          <th>Size</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>
+            <i class="bi bi-journal-text text-secondary me-2"></i>
+            <span class="font-monospace" style="font-size:.8rem;">{{ log.filename }}</span>
+          </td>
+          <td>{{ log.date }}</td>
+          <td class="text-muted">{{ log.size }}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;"
+                    onclick="viewLog('{{ log.filename | e }}')">
+              <i class="bi bi-eye me-1"></i>View
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="panel-body text-center text-muted py-5">
+    <i class="bi bi-journal-x fs-1 d-block mb-2 opacity-25"></i>
+    No log files found. Run the tool to generate logs.
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Log viewer modal ──────────────────────────────────────────────────────── -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-label="Log viewer">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="background:#161b22;border-color:#30363d;">
+      <div class="modal-header py-2" style="background:#0d1117;border-color:#30363d;">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          <i class="bi bi-journal-text" style="color:#8b949e;"></i>
+          <span class="font-monospace text-light" id="logModalTitle" style="font-size:.85rem;"></span>
+          <span class="ms-2 badge" id="logModalSize" style="background:#21262d;color:#8b949e;font-weight:400;"></span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge me-2" style="background:#21262d;color:#8b949e;font-size:.7rem;" id="logLineCounts"></span>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+      <div class="modal-body p-2" style="background:#0d1117;">
+        <!-- Legend -->
+        <div class="d-flex gap-3 px-2 pb-2" style="font-size:.72rem;">
+          <span><span style="color:#ff7b72;">&#9632;</span> ERROR</span>
+          <span><span style="color:#e3b341;">&#9632;</span> WARNING</span>
+          <span><span style="color:#c9d1d9;">&#9632;</span> INFO</span>
+        </div>
+        <pre class="log-viewer mb-0" id="logModalContent" style="border-radius:6px;">
+<span style="color:#8b949e;">Loading log file…</span>
+        </pre>
+      </div>
+      <div class="modal-footer py-2" style="background:#0d1117;border-color:#30363d;">
+        <button type="button" class="btn btn-sm" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;"
+                onclick="copyLog()">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _currentLogText = '';
+
+function viewLog(filename) {
+  const modal       = new bootstrap.Modal(document.getElementById('logModal'));
+  const pre         = document.getElementById('logModalContent');
+  const title       = document.getElementById('logModalTitle');
+  const lineCounts  = document.getElementById('logLineCounts');
+  const sizeEl      = document.getElementById('logModalSize');
+
+  title.textContent = filename;
+  pre.innerHTML     = '<span style="color:#8b949e;">Loading…</span>';
+  lineCounts.textContent = '';
+  sizeEl.textContent = '';
+  _currentLogText = '';
+  modal.show();
+
+  fetch('/logs/' + encodeURIComponent(filename))
+    .then(r => r.json())
+    .then(data => {
+      const text = data.content || '';
+      _currentLogText = text;
+      const lines  = text.split('\n');
+      const errors = lines.filter(l => /ERROR/i.test(l)).length;
+      const warns  = lines.filter(l => /WARNING/i.test(l)).length;
+
+      lineCounts.textContent =
+        `${lines.length} lines` +
+        (errors ? ` · ${errors} error(s)` : '') +
+        (warns  ? ` · ${warns} warning(s)` : '');
+
+      const bytes = new Blob([text]).size;
+      sizeEl.textContent = bytes < 1024
+        ? `${bytes} B`
+        : bytes < 1024 * 1024
+          ? `${(bytes/1024).toFixed(1)} KB`
+          : `${(bytes/1024/1024).toFixed(1)} MB`;
+
+      pre.innerHTML = colorizeLog(text);
+      pre.scrollTop = 0;
+    })
+    .catch(() => {
+      pre.innerHTML = '<span style="color:#ff7b72;">Failed to load log file.</span>';
+    });
+}
+
+function colorizeLog(text) {
+  return text.split('\n').map(line => {
+    const escaped = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    if (/ERROR/i.test(line))   return `<span class="log-error">${escaped}</span>`;
+    if (/WARNING/i.test(line)) return `<span class="log-warning">${escaped}</span>`;
+    return `<span class="log-info">${escaped}</span>`;
+  }).join('\n');
+}
+
+function copyLog() {
+  if (!_currentLogText) return;
+  navigator.clipboard.writeText(_currentLogText).then(() => {
+    const btn = event.currentTarget;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1800);
+  });
+}
+</script>
+{% endblock %}
